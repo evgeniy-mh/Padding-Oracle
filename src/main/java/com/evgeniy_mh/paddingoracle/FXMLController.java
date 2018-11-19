@@ -68,9 +68,7 @@ public class FXMLController {
 
         if (fileToSend != null) {
 
-            byte[] key = {5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5};
-
-            Task task = sender.SendFileAndKey(fileToSend, key);
+            Task task = sender.SendFile(fileToSend);
             task.setOnSucceeded(value -> {
                 putMessage(String.valueOf(task.getValue()));
 

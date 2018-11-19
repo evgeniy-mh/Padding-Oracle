@@ -12,7 +12,7 @@ public class FileSender {
     final int serverPort = 55555;
     final String address = "127.0.0.1";
 
-    public Task SendFileAndKey(byte[] file, byte[] key) {
+    public Task SendFile(byte[] file) {
         return new Task<Integer>() {
             @Override
             protected Integer call() throws Exception {
