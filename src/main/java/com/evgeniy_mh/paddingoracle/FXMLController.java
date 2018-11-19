@@ -54,39 +54,6 @@ public class FXMLController {
         startDecodeButton.setOnAction(event -> {
             SendFileToServer();
         });
-
-        /*ClientSocketProcessor clientSocket = new ClientSocketProcessor(messageQueue);
-        Thread client = new Thread(clientSocket);
-        client.setDaemon(true);
-        client.start();
-
-        openFileButton.setOnAction(event -> {
-            encryptedFile = openFile();
-        });
-
-        startDecodeButton.setOnAction(event -> {
-            try {
-                clientSocket.sendFileToServer(Files.readAllBytes(encryptedFile.toPath()));
-            } catch (IOException ex) {
-                Logger.getLogger(FXMLController.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        });
-
-        final LongProperty lastUpdate = new SimpleLongProperty();
-        final long minUpdateInterval = 0;
-        AnimationTimer timer = new AnimationTimer() {
-            @Override
-            public void handle(long now) {
-                if (now - lastUpdate.get() > minUpdateInterval) {
-                    final String message = messageQueue.poll();
-                    if (message != null) {
-                        ClientOutputTextArea.appendText(message + "\n");
-                    }
-                    lastUpdate.set(now);
-                }
-            }
-        };
-        timer.start();*/
     }
 
     private void SendFileToServer() {
@@ -100,7 +67,10 @@ public class FXMLController {
         }
 
         if (fileToSend != null) {
-            Task task = sender.SendFile(fileToSend);
+
+            byte[] key = {5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5};
+
+            Task task = sender.SendFileAndKey(fileToSend, key);
             task.setOnSucceeded(value -> {
                 putMessage(String.valueOf(task.getValue()));
 
