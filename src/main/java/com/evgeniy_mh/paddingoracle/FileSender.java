@@ -5,37 +5,37 @@ import java.io.DataOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
-import javafx.concurrent.Task;
+import java.util.concurrent.Callable;
 
-public class FileSender {
+public class FileSender implements Callable<Integer> {
 
     final int serverPort = 55555;
     final String address = "127.0.0.1";
+    final byte[] file;
 
-    public Task SendFile(byte[] file) {
-        return new Task<Integer>() {
-            @Override
-            protected Integer call() throws Exception {
+    public FileSender(byte[] file) {
+        this.file = file;
+    }
 
-                Socket socket = new Socket(address, serverPort);
-                InputStream sin = socket.getInputStream();
-                OutputStream sout = socket.getOutputStream();
-                DataInputStream in = new DataInputStream(sin);
-                DataOutputStream out = new DataOutputStream(sout);
+    @Override
+    public Integer call() throws Exception {
+        Socket socket = new Socket(address, serverPort);
+        InputStream sin = socket.getInputStream();
+        OutputStream sout = socket.getOutputStream();
+        DataInputStream in = new DataInputStream(sin);
+        DataOutputStream out = new DataOutputStream(sout);
 
-                out.writeUTF("new file");
-                out.writeLong(file.length);
-                sout.write(file);
-                sout.flush();
+        out.writeUTF("new file");
+        out.writeLong(file.length);
+        sout.write(file);
+        sout.flush();
 
-                int response = in.readInt();
+        int response = in.readInt();
 
-                socket.close();
-                sin.close();
-                out.close();
-                in.close();
-                return response;
-            }
-        };
+        socket.close();
+        sin.close();
+        out.close();
+        in.close();
+        return response;
     }
 }

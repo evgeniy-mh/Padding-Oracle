@@ -6,6 +6,9 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.animation.AnimationTimer;
@@ -57,8 +60,6 @@ public class FXMLController {
     }
 
     private void SendFileToServer() {
-        FileSender sender = new FileSender();
-
         byte[] fileToSend = null;
         try {
             fileToSend = Files.readAllBytes(encryptedFile.toPath());
@@ -67,16 +68,37 @@ public class FXMLController {
         }
 
         if (fileToSend != null) {
-
-            Task task = sender.SendFile(fileToSend);
+            /*Task task = sender.SendFile(fileToSend);
             task.setOnSucceeded(value -> {
                 putMessage(String.valueOf(task.getValue()));
 
-            });
+            });*/
+            Callable c = new FileSender(fileToSend);
+            FutureTask<Integer> ftask = new FutureTask<>(c);
+            Thread thread = new Thread(ftask);
+            thread.start();
 
-            Thread th = new Thread(task);
-            th.setDaemon(true);
-            th.start();
+            int response = 0;
+            try {
+                response = ftask.get();
+            } catch (InterruptedException | ExecutionException ex) {
+                Logger.getLogger(FXMLController.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
+            switch (response) {
+                case 200:
+                    putMessage("200 OK");
+
+                    break;
+                case 500:
+                    putMessage("500 Error");
+
+                    break;
+                default:
+                    putMessage("Server response error");
+                    break;
+            }
+
         }
     }
 
