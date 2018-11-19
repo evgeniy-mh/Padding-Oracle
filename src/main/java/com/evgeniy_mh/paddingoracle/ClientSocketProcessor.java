@@ -26,6 +26,8 @@ public class ClientSocketProcessor implements Runnable {
     @Override
     public void run() {
 
+        putMessage("test");
+        putMessage("test");
     }
 
     private void putMessage(String message) {
@@ -38,7 +40,7 @@ public class ClientSocketProcessor implements Runnable {
 
     public void sendFileToServer(byte[] b) {
         try {
-            putMessage("Connecting to Server...");
+            //putMessage("Connecting to Server...");
             int serverPort = 55555;
             String address = "127.0.0.1";
 
@@ -59,8 +61,6 @@ public class ClientSocketProcessor implements Runnable {
         } finally {
             stopSocket();
         }
-
-        stopSocket();
     }
 
     public void stopSocket() {

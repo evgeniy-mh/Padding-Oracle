@@ -11,6 +11,7 @@ import java.util.logging.Logger;
 import javafx.animation.AnimationTimer;
 import javafx.beans.property.LongProperty;
 import javafx.beans.property.SimpleLongProperty;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
@@ -46,7 +47,15 @@ public class FXMLController {
             Logger.getLogger(FXMLController.class.getName()).log(Level.SEVERE, null, ex);
         }
 
-        ClientSocketProcessor clientSocket = new ClientSocketProcessor(messageQueue);
+        openFileButton.setOnAction(event -> {
+            encryptedFile = openFile();
+        });
+
+        startDecodeButton.setOnAction(event -> {
+            SendFileToServer();
+        });
+
+        /*ClientSocketProcessor clientSocket = new ClientSocketProcessor(messageQueue);
         Thread client = new Thread(clientSocket);
         client.setDaemon(true);
         client.start();
@@ -77,7 +86,34 @@ public class FXMLController {
                 }
             }
         };
-        timer.start();
+        timer.start();*/
+    }
+
+    private void SendFileToServer() {
+        FileSender sender = new FileSender();
+
+        byte[] fileToSend = null;
+        try {
+            fileToSend = Files.readAllBytes(encryptedFile.toPath());
+        } catch (IOException ex) {
+            Logger.getLogger(FXMLController.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        if (fileToSend != null) {
+            Task task = sender.SendFile(fileToSend);
+            task.setOnSucceeded(value -> {
+                putMessage(String.valueOf(task.getValue()));
+
+            });
+
+            Thread th = new Thread(task);
+            th.setDaemon(true);
+            th.start();
+        }
+    }
+
+    private void putMessage(String message) {
+        ClientOutputTextArea.appendText(message + "\n");
     }
 
     private File openFile() {
