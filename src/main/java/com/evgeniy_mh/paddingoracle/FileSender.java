@@ -19,23 +19,30 @@ public class FileSender implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
-        Socket socket = new Socket(address, serverPort);
-        InputStream sin = socket.getInputStream();
-        OutputStream sout = socket.getOutputStream();
-        DataInputStream in = new DataInputStream(sin);
-        DataOutputStream out = new DataOutputStream(sout);
+        int response = 0;
+        try (Socket socket = new Socket(address, serverPort)) {
+            InputStream sin = socket.getInputStream();
+            OutputStream sout = socket.getOutputStream();
+            DataInputStream in = new DataInputStream(sin);
+            DataOutputStream out = new DataOutputStream(sout);
 
-        out.writeUTF("new file");
-        out.writeLong(file.length);
-        sout.write(file);
-        sout.flush();
+            out.writeUTF("new file");
+            out.flush();
 
-        int response = in.readInt();
+            out.writeLong(file.length);
+            out.flush();
 
-        socket.close();
-        sin.close();
-        out.close();
-        in.close();
+            sout.write(file);
+            sout.flush();
+
+            //System.out.println(socket.isConnected());
+            response = in.readInt();
+
+            out.close();
+            in.close();
+            sin.close();
+            sout.close();
+        }
         return response;
     }
 }
