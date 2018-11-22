@@ -78,18 +78,18 @@ public class FXMLController {
             //debugPrintByteArray("file block #" + i, fileBlocks.get(i));
         }
 
-        for (byte i = 0; i < 2; i++) {        
-            fileBlocks.get(blocksCount - 2)[AES_BLOCK_SIZE - 1] = i; //C1`
+        for (int i = 0; i < 256; i++) {
+            System.out.println("i="+i);
+            fileBlocks.get(blocksCount - 2)[AES_BLOCK_SIZE - 1] = (byte)i; //C1`
             byte[] tempFile = new byte[AES_BLOCK_SIZE * 2];
             System.arraycopy(fileBlocks.get(blocksCount - 2), 0, tempFile, 0, AES_BLOCK_SIZE);
             System.arraycopy(fileBlocks.get(blocksCount - 1), 0, tempFile, AES_BLOCK_SIZE, AES_BLOCK_SIZE); //C1` + C2
 
             //debugPrintByteArray("C2", fileBlocks.get(blocksCount-1));
             //debugPrintByteArray("C1` + C2", tempFile);
-
-            Callable callable = new FileSender(tempFile);
+            Callable<Integer> callable = new FileSender(tempFile);
             FutureTask<Integer> ftask = new FutureTask<>(callable);
-            Thread thread = new Thread(ftask);            
+            Thread thread = new Thread(ftask);
             thread.start();
 
             int response = 0;
@@ -98,20 +98,11 @@ public class FXMLController {
             } catch (InterruptedException | ExecutionException ex) {
                 Logger.getLogger(FXMLController.class.getName()).log(Level.SEVERE, null, ex);
             }
-            switch (response) {
-                case 200:
-                    putMessage("200 OK");
-                    
-                    break;
-                case 500:
-                    putMessage("500 Error");
-
-                    break;
-                default:
-                    putMessage("Server response error");
-                    break;
+            
+            if (response == 200) {
+                putMessage("OK, i="+i);
+                break;
             }
-            //if(response==200) break;
         }
 
     }
