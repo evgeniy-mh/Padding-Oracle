@@ -1,5 +1,7 @@
 com/evgeniy_mh/paddingoracle/AES_CBCBruteforcer.class
+com/evgeniy_mh/paddingoracle/DecodeInfo.class
 com/evgeniy_mh/paddingoracle/AES_CBCBruteforcer$1.class
 com/evgeniy_mh/paddingoracle/FileSender.class
 com/evgeniy_mh/paddingoracle/FXMLController.class
 com/evgeniy_mh/paddingoracle/MainApp.class
+com/evgeniy_mh/paddingoracle/FXMLController$1.class

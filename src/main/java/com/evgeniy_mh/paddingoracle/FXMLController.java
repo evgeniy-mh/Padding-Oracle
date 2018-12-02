@@ -7,21 +7,24 @@ import java.io.RandomAccessFile;
 import java.net.URISyntaxException;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.animation.AnimationTimer;
+import javafx.beans.property.LongProperty;
+import javafx.beans.property.SimpleLongProperty;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
-import javafx.scene.control.TextArea;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 public class FXMLController {
 
     final int AES_BLOCK_SIZE = 16;
-    final BlockingQueue<String> messageQueue = new ArrayBlockingQueue<>(1);
 
     private MainApp mainApp;
     private FileChooser fileChooser = new FileChooser();
@@ -29,9 +32,15 @@ public class FXMLController {
 
     private File encryptedFile;
     private File resultFile;
+    private DecodeInfo decodeInfo;
 
     @FXML
-    TextArea ClientOutputTextArea;
+    public Label blocksCountLabel;
+    @FXML
+    public Label currentBlockLabel;
+    @FXML
+    public Label currentByteLabel;
+
     @FXML
     Button openFileButton;
     @FXML
@@ -48,6 +57,9 @@ public class FXMLController {
     }
 
     public void initialize() {
+        decodeInfo = new DecodeInfo();
+        updateDecryptInfo();
+
         try {
             fileChooser.setInitialDirectory(new File(MainApp.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath()).getParentFile());
         } catch (URISyntaxException ex) {
@@ -85,104 +97,39 @@ public class FXMLController {
             }
         }
 
-        Task bruteforce = new AES_CBCBruteforcer(decodeProgressBar).Bruteforce(encryptedFile, resultFile);
+        Task bruteforce = new AES_CBCBruteforcer(decodeProgressBar, decodeInfo).Bruteforce(encryptedFile, resultFile);
 
         bruteforce.setOnSucceeded(value -> {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
             alert.setTitle("Файл расшифрован");
             alert.showAndWait();
+
+            decodeInfo.currentBlock.set(0);
+            decodeInfo.currentByte.set(0);
+            decodeProgressBar.setProgress(0);
         });
+
+        final LongProperty lastUpdate = new SimpleLongProperty();
+        final long minUpdateInterval = 0;
+        AnimationTimer timer = new AnimationTimer() {
+            @Override
+            public void handle(long now) {
+                if (now - lastUpdate.get() > minUpdateInterval) {
+                    updateDecryptInfo();
+                    lastUpdate.set(now);
+                }
+            }
+        };
+        timer.start();
 
         Thread t = new Thread(bruteforce);
         t.start();
-        /*byte[] fileToSend = null;
-        try {
-            fileToSend = Files.readAllBytes(encryptedFile.toPath());
-        } catch (IOException ex) {
-            Logger.getLogger(FXMLController.class.getName()).log(Level.SEVERE, null, ex);
-        }
-
-        int blocksCount = fileToSend.length / AES_BLOCK_SIZE;
-        ArrayList<byte[]> fileBlocks = new ArrayList<>();
-        for (int i = 0; i < blocksCount; i++) {
-            byte[] buff = new byte[AES_BLOCK_SIZE];
-            System.arraycopy(fileToSend, i * 16, buff, 0, 16);
-            fileBlocks.add(buff);
-            debugPrintByteArray("file block #" + i, fileBlocks.get(i));
-        }
-
-        for (int i = 1; i < blocksCount; i++) {
-            byte[] I2 = new byte[AES_BLOCK_SIZE];
-            int I2cnt = AES_BLOCK_SIZE - 1;
-
-            for (int b = 0; b < 16; b++) { //по байтам
-                for (int g = 0; g < 256; g++) { //по 1 байту
-                    //C1`
-                    byte[] C1d = new byte[AES_BLOCK_SIZE];
-
-                    byte[] Pad = paddings.get(b).clone();
-                    System.arraycopy(Pad, 0, C1d, AES_BLOCK_SIZE - Pad.length, Pad.length);//C1..|..Pad
-
-                    C1d[AES_BLOCK_SIZE - Pad.length] = (byte) (C1d[AES_BLOCK_SIZE - Pad.length] ^ g);//01^j
-                    if (b != 0) {
-                        for (int p = 0; p < AES_BLOCK_SIZE; p++) {
-                            C1d[p] = (byte) (C1d[p] ^ I2[p]);
-                        }
-                    }
-
-                    //debugPrintByteArray("c1d, j=" + j, C1d);
-                    byte[] tempFile = new byte[AES_BLOCK_SIZE * 2];
-                    byte[] C2 = fileBlocks.get(i);
-
-                    System.arraycopy(C1d, 0, tempFile, 0, AES_BLOCK_SIZE);
-                    System.arraycopy(C2, 0, tempFile, AES_BLOCK_SIZE, AES_BLOCK_SIZE); //C1` + C2
-
-                    //debugPrintByteArray("C2", fileBlocks.get(blocksCount-1));
-                    //debugPrintByteArray("C1` + C2", tempFile);
-                    Callable<Integer> callable = new FileSender(tempFile);
-                    FutureTask<Integer> ftask = new FutureTask<>(callable);
-                    Thread thread = new Thread(ftask);
-                    thread.start();
-
-                    int response = 0;
-                    try {
-                        response = ftask.get();
-                    } catch (InterruptedException | ExecutionException ex) {
-                        Logger.getLogger(FXMLController.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-
-                    if (response == 200) {
-                        putMessage("OK, j=" + g);
-                        System.out.println("j=" + g);
-                        I2[I2cnt--] = (byte) g;
-
-                        System.out.println("-------------------------------------------------");
-                        debugPrintByteArray("I2", I2);
-                        break;
-                    }
-                }
-            }
-
-            byte[] C1 = fileBlocks.get(i - 1).clone();
-            for (int p = 0; p < AES_BLOCK_SIZE; p++) {
-                C1[p] = (byte) (C1[p] ^ I2[p]);
-            }
-            debugPrintByteArray("C1", C1);
-            File out = new File("/home/evgeniy/Files/Downloads/test/out");
-            try {
-                out.createNewFile();
-
-                FileOutputStream fos = new FileOutputStream(out, true);
-                fos.write(C1);
-                fos.close();
-            } catch (IOException ex) {
-                Logger.getLogger(FXMLController.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        }*/
     }
 
-    private void putMessage(String message) {
-        ClientOutputTextArea.appendText(message + "\n");
+    private void updateDecryptInfo() {
+        blocksCountLabel.setText(String.valueOf(decodeInfo.blocksCount.get()));
+        currentBlockLabel.setText(decodeInfo.currentBlock.get() + " / " + decodeInfo.blocksCount.get());
+        currentByteLabel.setText(decodeInfo.currentByte.get() + " / " + AES_BLOCK_SIZE);
     }
 
     private File openFile(String dialogTitle) {

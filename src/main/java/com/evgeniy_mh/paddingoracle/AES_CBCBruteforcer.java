@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.concurrent.Task;
@@ -17,8 +18,11 @@ public class AES_CBCBruteforcer {
     final static int AES_BLOCK_SIZE = 16;
     final private ProgressIndicator progressIndicator;
 
-    public AES_CBCBruteforcer(ProgressIndicator progressIndicator) {
+    final private DecodeInfo decodeInfo;
+
+    public AES_CBCBruteforcer(ProgressIndicator progressIndicator, DecodeInfo decodeInfo) {
         this.progressIndicator = progressIndicator;
+        this.decodeInfo = decodeInfo;
     }
 
     public Task<Void> Bruteforce(File in, File out) {
@@ -38,6 +42,7 @@ public class AES_CBCBruteforcer {
                 byte[] bytes = Files.readAllBytes(in.toPath());
 
                 int blocksCount = bytes.length / AES_BLOCK_SIZE;
+                decodeInfo.blocksCount.set(blocksCount);
                 ArrayList<byte[]> fileBlocks = new ArrayList<>();
                 for (int i = 0; i < blocksCount; i++) {
                     byte[] buff = new byte[AES_BLOCK_SIZE];
@@ -50,10 +55,12 @@ public class AES_CBCBruteforcer {
 
                 FileOutputStream fos = new FileOutputStream(out, true);
                 for (int i = 1; i < blocksCount; i++) {
+                    decodeInfo.currentBlock.set(i);
                     byte[] I2 = new byte[AES_BLOCK_SIZE];
                     int I2cnt = AES_BLOCK_SIZE - 1;
 
                     for (int b = 0; b < 16; b++) { //по байтам
+                        decodeInfo.currentByte.set(b);
                         for (int g = 0; g < 256; g++) { //по 1 байту
                             //C1`
                             byte[] C1d = new byte[AES_BLOCK_SIZE];
