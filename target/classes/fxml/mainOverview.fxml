@@ -21,7 +21,15 @@
                </children>
             </HBox>
             <Button fx:id="openFileButton" mnemonicParsing="false" text="Выбрать зашифрованный файл" />
-            <Button fx:id="startDecodeButton" mnemonicParsing="false" text="Button" />
+            <Button fx:id="startDecodeButton" mnemonicParsing="false" text="Начать расшифровку" />
+            <HBox prefWidth="200.0">
+               <children>
+                  <Label text="Файл результата" />
+                  <Button fx:id="createResultFile" mnemonicParsing="false" text="Создать" />
+                  <Button fx:id="openResultFile" mnemonicParsing="false" text="Открыть" />
+               </children>
+            </HBox>
+            <ProgressBar fx:id="decodeProgressBar" prefWidth="200.0" progress="0.0" />
          </children>
       </VBox>
    </children>
