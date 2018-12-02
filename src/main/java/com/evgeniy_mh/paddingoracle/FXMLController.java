@@ -19,6 +19,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.control.TextField;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
@@ -40,17 +41,20 @@ public class FXMLController {
     public Label currentBlockLabel;
     @FXML
     public Label currentByteLabel;
-
     @FXML
-    Button openFileButton;
+    public TextField encFilePathTextField;
     @FXML
-    Button startDecodeButton;
+    public TextField resultFilePathTextField;
     @FXML
-    Button openResultFile;
+    public Button openEncFileButton;
     @FXML
-    Button createResultFile;
+    public Button startDecodeButton;
     @FXML
-    ProgressBar decodeProgressBar;
+    public Button openResultFile;
+    @FXML
+    public Button createResultFile;
+    @FXML
+    public ProgressBar decodeProgressBar;
 
     public void setMainApp(MainApp mainApp) {
         this.mainApp = mainApp;
@@ -66,20 +70,23 @@ public class FXMLController {
             Logger.getLogger(FXMLController.class.getName()).log(Level.SEVERE, null, ex);
         }
 
-        openFileButton.setOnAction(event -> {
+        openEncFileButton.setOnAction(event -> {
             encryptedFile = openFile("Выбрать зашифрованный файл");
-        });
-
-        startDecodeButton.setOnAction(event -> {
-            startDecode();
+            updateFileInfo();
         });
 
         openResultFile.setOnAction(event -> {
             resultFile = openFile("Выбрать файл результата");
+            updateFileInfo();
         });
 
         createResultFile.setOnAction(event -> {
             resultFile = createNewFile("Создать файл для сохранения результата");
+            updateFileInfo();
+        });
+
+        startDecodeButton.setOnAction(event -> {
+            startDecode();
         });
     }
 
@@ -102,6 +109,7 @@ public class FXMLController {
         bruteforce.setOnSucceeded(value -> {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
             alert.setTitle("Файл расшифрован");
+            alert.setHeaderText("Файл успешно расшифрован!");
             alert.showAndWait();
 
             decodeInfo.currentBlock.set(0);
@@ -124,6 +132,15 @@ public class FXMLController {
 
         Thread t = new Thread(bruteforce);
         t.start();
+    }
+
+    private void updateFileInfo() {
+        if (encryptedFile != null) {
+            encFilePathTextField.setText(encryptedFile.getAbsolutePath());
+        }
+        if (resultFile != null) {
+            resultFilePathTextField.setText(resultFile.getAbsolutePath());
+        }
     }
 
     private void updateDecryptInfo() {
