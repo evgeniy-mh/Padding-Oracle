@@ -113,7 +113,7 @@
                               <Insets top="5.0" />
                            </padding>
                         </Label>
-                        <TextField fx:id="encFilePathTextField" maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
+                        <TextField fx:id="encFilePathTextField" editable="false" maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
                         <Button fx:id="openEncFileButton" mnemonicParsing="false" text="Открыть" />
                      </children>
                   </HBox>
@@ -124,7 +124,7 @@
                               <Insets top="5.0" />
                            </padding>
                         </Label>
-                        <TextField fx:id="resultFilePathTextField" HBox.hgrow="ALWAYS" />
+                        <TextField fx:id="resultFilePathTextField" editable="false" HBox.hgrow="ALWAYS" />
                         <Button fx:id="createResultFile" mnemonicParsing="false" text="Создать" />
                         <Button fx:id="openResultFile" mnemonicParsing="false" text="Открыть" />
                      </children>
