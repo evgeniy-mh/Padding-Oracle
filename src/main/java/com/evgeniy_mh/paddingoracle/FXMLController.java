@@ -104,12 +104,19 @@ public class FXMLController {
             }
         }
 
-        Task bruteforce = new AES_CBCBruteforcer(decodeProgressBar, decodeInfo).Bruteforce(encryptedFile, resultFile);
+        Task<Boolean> bruteforce = new AES_CBCBruteforcer(decodeProgressBar, decodeInfo).Bruteforce(encryptedFile, resultFile);
 
         bruteforce.setOnSucceeded(value -> {
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-            alert.setTitle("Файл расшифрован");
-            alert.setHeaderText("Файл успешно расшифрован!");
+            Alert alert;
+            if (bruteforce.getValue()) {
+                alert = new Alert(Alert.AlertType.CONFIRMATION);
+                alert.setTitle("Файл расшифрован");
+                alert.setHeaderText("Файл успешно расшифрован!");
+            } else {
+                alert = new Alert(Alert.AlertType.ERROR);
+                alert.setTitle("Файл не расшифрован!");
+                alert.setHeaderText("При расшифровке произошла ошибка!");
+            }
             alert.showAndWait();
 
             decodeInfo.currentBlock.set(0);

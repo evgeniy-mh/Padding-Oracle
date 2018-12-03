@@ -14,22 +14,29 @@ import javafx.concurrent.Task;
 import javafx.scene.control.ProgressIndicator;
 
 public class AES_CBCBruteforcer {
-    
+
     final static int AES_BLOCK_SIZE = 16;
     final private ProgressIndicator progressIndicator;
-    
+
     final private DecodeInfo decodeInfo;
-    
+
     public AES_CBCBruteforcer(ProgressIndicator progressIndicator, DecodeInfo decodeInfo) {
         this.progressIndicator = progressIndicator;
         this.decodeInfo = decodeInfo;
     }
-    
-    public Task<Void> Bruteforce(File in, File out) {
-        return new Task<Void>() {
+
+    /**
+     *
+     * @param in
+     * @param out
+     * @return true- расшифровка прошла успешно; false- произошла ошибка
+     */
+    public Task<Boolean> Bruteforce(File in, File out) {
+        return new Task<Boolean>() {
             @Override
-            protected Void call() throws Exception {
-                
+            protected Boolean call() throws Exception {
+                boolean error = false;
+
                 ArrayList<byte[]> paddings = new ArrayList<>();
                 for (int i = 1; i <= AES_BLOCK_SIZE; i++) {
                     byte[] p = new byte[i];
@@ -38,9 +45,10 @@ public class AES_CBCBruteforcer {
                     }
                     paddings.add(p);
                 }
-                
+
+                //re do!
                 byte[] bytes = Files.readAllBytes(in.toPath());
-                
+
                 int blocksCount = bytes.length / AES_BLOCK_SIZE;
                 decodeInfo.blocksCount.set(blocksCount);
                 ArrayList<byte[]> fileBlocks = new ArrayList<>();
@@ -49,22 +57,23 @@ public class AES_CBCBruteforcer {
                     System.arraycopy(bytes, i * 16, buff, 0, 16);
                     fileBlocks.add(buff);
                 }
-                
+
                 int resultProgress = (blocksCount - 1) * AES_BLOCK_SIZE * 256;
                 int progress = 0;
-                
+
                 FileOutputStream fos = new FileOutputStream(out, true);
-                for (int i = 1; i < blocksCount; i++) {
+
+                for (int i = 1; !error && i < blocksCount; i++) {
                     decodeInfo.currentBlock.set(i);
                     byte[] I2 = new byte[AES_BLOCK_SIZE];
                     int I2cnt = AES_BLOCK_SIZE - 1;
-                    
-                    for (int b = 0; b < 16; b++) { //по байтам
+
+                    for (int b = 0; !error && b < 16; b++) { //по байтам
                         decodeInfo.currentByte.set(b);
                         for (int g = 0; g < 256; g++) { //по 1 байту
                             //C1`
                             byte[] C1d = new byte[AES_BLOCK_SIZE];
-                            
+
                             byte[] Pad = paddings.get(b).clone();
                             System.arraycopy(Pad, 0, C1d, AES_BLOCK_SIZE - Pad.length, Pad.length);//C1..|..Pad
 
@@ -74,10 +83,10 @@ public class AES_CBCBruteforcer {
                                     C1d[p] = (byte) (C1d[p] ^ I2[p]);
                                 }
                             }
-                            
+
                             byte[] tempFile = new byte[AES_BLOCK_SIZE * 2];
                             byte[] C2 = fileBlocks.get(i);
-                            
+
                             System.arraycopy(C1d, 0, tempFile, 0, AES_BLOCK_SIZE);
                             System.arraycopy(C2, 0, tempFile, AES_BLOCK_SIZE, AES_BLOCK_SIZE); //C1` + C2
 
@@ -85,24 +94,27 @@ public class AES_CBCBruteforcer {
                             FutureTask<Integer> ftask = new FutureTask<>(callable);
                             Thread thread = new Thread(ftask);
                             thread.start();
-                            
+
                             int response = 0;
                             try {
                                 response = ftask.get();
                             } catch (InterruptedException | ExecutionException ex) {
                                 Logger.getLogger(FXMLController.class.getName()).log(Level.SEVERE, null, ex);
                             }
-                            
+
                             if (response == 200) {
                                 I2[I2cnt--] = (byte) g;
                                 progress += 255 - g;
                                 break;
+                            } else if (g == 255) {
+                                error = true;
                             }
+
                             progress++;
                             progressIndicator.setProgress((double) progress / (double) resultProgress);
                         }
                     }
-                    
+
                     byte[] C1 = fileBlocks.get(i - 1).clone();
                     for (int p = 0; p < AES_BLOCK_SIZE; p++) {
                         C1[p] = (byte) (C1[p] ^ I2[p]);
@@ -113,14 +125,16 @@ public class AES_CBCBruteforcer {
                             byte[] shortC1 = new byte[AES_BLOCK_SIZE - nToDeleteBytes];
                             System.arraycopy(C1, 0, shortC1, 0, shortC1.length);
                             fos.write(shortC1);
+                        } else {
+                            error = true;
                         }
                     } else {
                         fos.write(C1);
                     }
-                    
+
                 }
                 fos.close();
-                return null;
+                return !error;
             }
         };
     }
