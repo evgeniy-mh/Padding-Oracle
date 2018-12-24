@@ -2,12 +2,12 @@ package com.evgeniy_mh.paddingoracle;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.nio.file.Files;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.concurrent.Task;
@@ -46,15 +46,11 @@ public class AES_CBCBruteforcer {
                     paddings.add(p);
                 }
 
-                //re do!
-                byte[] bytes = Files.readAllBytes(in.toPath());
-
-                int blocksCount = bytes.length / AES_BLOCK_SIZE;
+                int blocksCount = (int) (in.length() / AES_BLOCK_SIZE);
                 decodeInfo.blocksCount.set(blocksCount);
                 ArrayList<byte[]> fileBlocks = new ArrayList<>();
                 for (int i = 0; i < blocksCount; i++) {
-                    byte[] buff = new byte[AES_BLOCK_SIZE];
-                    System.arraycopy(bytes, i * 16, buff, 0, 16);
+                    byte[] buff = readBytesFromFile(in, i * 16, (i * 16) + AES_BLOCK_SIZE);
                     fileBlocks.add(buff);
                 }
 
@@ -137,5 +133,20 @@ public class AES_CBCBruteforcer {
                 return !error;
             }
         };
+    }
+
+    public static byte[] readBytesFromFile(File f, int from, int to) {
+        try {
+            byte[] res;
+            try (RandomAccessFile raf = new RandomAccessFile(f, "r")) {
+                raf.seek(from);
+                res = new byte[to - from];
+                raf.read(res, 0, to - from);
+            }
+            return res;
+        } catch (IOException ex) {
+            Logger.getLogger(AES_CBCBruteforcer.class.getName()).log(Level.SEVERE, null, ex);
+            return null;
+        }
     }
 }
