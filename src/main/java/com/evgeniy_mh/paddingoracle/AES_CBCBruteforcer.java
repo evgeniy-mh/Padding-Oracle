@@ -37,17 +37,18 @@ public class AES_CBCBruteforcer {
             protected Boolean call() throws Exception {
                 boolean error = false;
 
-                ArrayList<byte[]> paddings = new ArrayList<>();
+                ArrayList<byte[]> paddings = new ArrayList<>();                
                 for (int i = 1; i <= AES_BLOCK_SIZE; i++) {
-                    byte[] p = new byte[i];
-                    for (int j = 0; j < i; j++) {
-                        p[j] = (byte) i;
+                    byte[] pad = new byte[AES_BLOCK_SIZE];
+                    for (int j = AES_BLOCK_SIZE - 1; j >= AES_BLOCK_SIZE - i; j--) {
+                        pad[j] = (byte) i;
                     }
-                    paddings.add(p);
+                    paddings.add(pad);
                 }
 
                 int blocksCount = (int) (in.length() / AES_BLOCK_SIZE);
                 decodeInfo.blocksCount.set(blocksCount);
+
                 ArrayList<byte[]> fileBlocks = new ArrayList<>();
                 for (int i = 0; i < blocksCount; i++) {
                     byte[] buff = readBytesFromFile(in, i * 16, (i * 16) + AES_BLOCK_SIZE);
@@ -67,24 +68,21 @@ public class AES_CBCBruteforcer {
                     for (int b = 0; !error && b < 16; b++) { //по байтам
                         decodeInfo.currentByte.set(b);
                         for (int g = 0; g < 256; g++) { //по 1 байту
-                            //C1`
-                            byte[] C1 = new byte[AES_BLOCK_SIZE];
 
                             byte[] Pad = paddings.get(b).clone();
-                            System.arraycopy(Pad, 0, C1, AES_BLOCK_SIZE - Pad.length, Pad.length);//C1..|..Pad
 
-                            C1[AES_BLOCK_SIZE - Pad.length] = (byte) (C1[AES_BLOCK_SIZE - Pad.length] ^ g);//01^j
+                            Pad[AES_BLOCK_SIZE - b - 1] = (byte) (Pad[AES_BLOCK_SIZE - b - 1] ^ g);
                             if (b != 0) {
                                 for (int p = 0; p < AES_BLOCK_SIZE; p++) {
-                                    C1[p] = (byte) (C1[p] ^ G[p]);
+                                    Pad[p] = (byte) (Pad[p] ^ G[p]);
                                 }
                             }
 
                             byte[] tempFile = new byte[AES_BLOCK_SIZE * 2];
                             byte[] C2 = fileBlocks.get(i);
 
-                            System.arraycopy(C1, 0, tempFile, 0, AES_BLOCK_SIZE);
-                            System.arraycopy(C2, 0, tempFile, AES_BLOCK_SIZE, AES_BLOCK_SIZE); //C1` + C2
+                            System.arraycopy(Pad, 0, tempFile, 0, AES_BLOCK_SIZE);
+                            System.arraycopy(C2, 0, tempFile, AES_BLOCK_SIZE, AES_BLOCK_SIZE); //Pad + C2
 
                             Callable<Integer> callable = new FileSender(tempFile);
                             FutureTask<Integer> ftask = new FutureTask<>(callable);
