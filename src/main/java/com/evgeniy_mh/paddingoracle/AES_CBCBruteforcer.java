@@ -84,7 +84,7 @@ public class AES_CBCBruteforcer {
                             System.arraycopy(Pad, 0, tempFile, 0, AES_BLOCK_SIZE);
                             System.arraycopy(C2, 0, tempFile, AES_BLOCK_SIZE, AES_BLOCK_SIZE); //Pad + C2
 
-                            Callable<Integer> callable = new FileSender(tempFile);
+                            Callable<Integer> callable = new FileByteSender(tempFile);
                             FutureTask<Integer> ftask = new FutureTask<>(callable);
                             Thread thread = new Thread(ftask);
                             thread.start();

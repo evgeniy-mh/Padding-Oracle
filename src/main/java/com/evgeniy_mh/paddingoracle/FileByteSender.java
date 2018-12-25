@@ -7,14 +7,14 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.util.concurrent.Callable;
 
-public class FileSender implements Callable<Integer> {
+public class FileByteSender implements Callable<Integer> {
 
     final int serverPort = 55555;
     final String address = "127.0.0.1";
     final byte[] file;
 
-    public FileSender(byte[] file) {
-        this.file = file;
+    public FileByteSender(byte[] fileBytes) {
+        this.file = fileBytes;
     }
 
     @Override
